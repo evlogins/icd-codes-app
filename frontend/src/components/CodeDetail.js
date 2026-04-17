@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { getCodeDetail } from '../api/icdApi';
 import './CodeDetail.css';
 
 function CodeDetail({ code, context, onBack }) {
@@ -11,8 +11,8 @@ function CodeDetail({ code, context, onBack }) {
     const fetchDetail = async () => {
       setLoading(true);
       try {
-        const res = await axios.get('/api/icd/' + code.code, { params: { context } });
-        setDetail(res.data);
+        const data = await getCodeDetail(code.code, context);
+        setDetail(data);
       } catch (err) {
         setDetail({ ...code, context: null });
         setError('Could not load full details. Showing basic info.');
@@ -48,7 +48,7 @@ function CodeDetail({ code, context, onBack }) {
             <div className="meta-item">
               <span className="meta-label">Specificity</span>
               <span className={"meta-value " + (d.details.isSpecific ? 'specific' : 'unspecific')}>
-                {d.details.isSpecific ? 'Specific' : 'Unspecified - consider using a more specific code'}
+                {d.details.isSpecific ? '✅ Specific' : '⚠️ Unspecified'}
               </span>
             </div>
           </div>
