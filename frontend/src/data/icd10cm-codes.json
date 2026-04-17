@@ -1,0 +1,22 @@
+[
+  {"code": "E11.9", "description": "Type 2 diabetes mellitus without complications"},
+  {"code": "E11.65", "description": "Type 2 diabetes mellitus with hyperglycemia"},
+  {"code": "E10.9", "description": "Type 1 diabetes mellitus without complications"},
+  {"code": "I10", "description": "Essential (primary) hypertension"},
+  {"code": "I25.10", "description": "Atherosclerotic heart disease of native coronary artery without angina pectoris"},
+  {"code": "J44.9", "description": "Chronic obstructive pulmonary disease, unspecified"},
+  {"code": "J45.909", "description": "Unspecified asthma, uncomplicated"},
+  {"code": "F33.9", "description": "Major depressive disorder, recurrent, unspecified"},
+  {"code": "F41.9", "description": "Anxiety disorder, unspecified"},
+  {"code": "M54.50", "description": "Low back pain, unspecified"},
+  {"code": "R51.9", "description": "Headache, unspecified"},
+  {"code": "N39.0", "description": "Urinary tract infection, site not specified"},
+  {"code": "K21.9", "description": "Gastro-esophageal reflux disease without esophagitis"},
+  {"code": "Z00.00", "description": "Encounter for general adult medical examination without abnormal findings"},
+  {"code": "E78.5", "description": "Hyperlipidemia, unspecified"},
+  {"code": "E66.9", "description": "Obesity, unspecified"},
+  {"code": "R10.9", "description": "Unspecified abdominal pain"},
+  {"code": "J06.9", "description": "Acute upper respiratory infection, unspecified"},
+  {"code": "G47.00", "description": "Insomnia, unspecified"},
+  {"code": "Z12.11", "description": "Encounter for screening for malignant neoplasm of colon"}
+]

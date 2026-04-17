@@ -6,7 +6,7 @@
 const NLM_BASE = 'https://clinicaltables.nlm.nih.gov/api/icd10cm/v3/search';
 const cache = new Map();
 
-const CONTEXT_NOTES = {
+export const CONTEXT_NOTES = {
   billing: {
     label: 'Billing & Reimbursement',
     note: 'Used for insurance claims, CMS reimbursement, and payer adjudication.',

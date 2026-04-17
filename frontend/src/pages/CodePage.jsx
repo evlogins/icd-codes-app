@@ -1,24 +1,42 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ContextSelector from '../components/ContextSelector';
-import { getCodeDetail } from '../api/icdApi';
+import { getCodeDetail, CONTEXT_NOTES } from '../api/icdApi';
+import { getCodeFromDataset } from '../data/codes';
 import { useAppContext } from '../state/AppContext';
 import './CodePage.css';
 
 export default function CodePage() {
   const { code } = useParams();
   const { context } = useAppContext();
-  const [state, setState] = useState({ loading: true, data: null, error: null });
+  const seed = getCodeFromDataset(code, context);
+
+  const [runtimeState, setRuntimeState] = useState(
+    seed
+      ? { loading: false, data: seed, error: null }
+      : { loading: true, data: null, error: null }
+  );
   const [copied, setCopied] = useState(false);
 
+  // When a fresh context is picked, swap the bundled note in-place.
+  const data = runtimeState.data
+    ? { ...runtimeState.data, context: CONTEXT_NOTES[context] || CONTEXT_NOTES.clinical }
+    : null;
+
   useEffect(() => {
+    if (seed) {
+      // Dataset hit: no network needed; the seed already has what we render.
+      setRuntimeState({ loading: false, data: seed, error: null });
+      return;
+    }
     let cancelled = false;
-    setState({ loading: true, data: null, error: null });
+    setRuntimeState({ loading: true, data: null, error: null });
     getCodeDetail(code, context)
-      .then((data) => { if (!cancelled) setState({ loading: false, data, error: null }); })
-      .catch((err) => { if (!cancelled) setState({ loading: false, data: null, error: err.message || 'Could not load code.' }); });
+      .then((d) => { if (!cancelled) setRuntimeState({ loading: false, data: d, error: null }); })
+      .catch((err) => { if (!cancelled) setRuntimeState({ loading: false, data: null, error: err.message || 'Could not load code.' }); });
     return () => { cancelled = true; };
-  }, [code, context]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code]);
 
   const handleCopy = async () => {
     try {
@@ -26,11 +44,11 @@ export default function CodePage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 1600);
     } catch {
-      // noop — clipboard may be unavailable in some contexts
+      /* clipboard unavailable */
     }
   };
 
-  if (state.loading) {
+  if (runtimeState.loading) {
     return (
       <div className="code-page container">
         <div className="page-loading"><span className="bar-loader" aria-hidden="true" /><span>Loading code…</span></div>
@@ -38,21 +56,20 @@ export default function CodePage() {
     );
   }
 
-  if (state.error) {
+  if (runtimeState.error || !data) {
     return (
       <div className="code-page container">
         <Link to="/" className="back-link">← Back to search</Link>
         <div className="code-not-found">
           <h1>Code not found</h1>
-          <p>{state.error}</p>
-          <p>This code may not exist in the current ICD-10-CM code set, or it may have been retired.</p>
+          <p>{runtimeState.error || 'This code does not appear in the ICD-10-CM code set.'}</p>
+          <p>It may have been retired, or the URL may be malformed.</p>
         </div>
       </div>
     );
   }
 
-  const d = state.data;
-  const specific = d.details?.isSpecific;
+  const specific = data.details?.isSpecific;
 
   return (
     <div className="code-page container">
@@ -60,8 +77,8 @@ export default function CodePage() {
 
       <header className="code-head">
         <div className="code-head-left">
-          <div className="code-big mono">{d.code}</div>
-          <div className="code-version">{d.version || 'ICD-10-CM'}</div>
+          <div className="code-big mono">{data.code}</div>
+          <div className="code-version">{data.version || 'ICD-10-CM'}</div>
         </div>
         <div className="code-head-right">
           <span className={'pill ' + (specific ? 'pill-success' : 'pill-warn')}>
@@ -70,14 +87,14 @@ export default function CodePage() {
         </div>
       </header>
 
-      <h1 className="code-description">{d.description}</h1>
+      <h1 className="code-description">{data.description}</h1>
 
       <div className="code-grid">
         <section className="code-main">
           <dl className="def-list">
             <div>
               <dt>Category</dt>
-              <dd className="mono">{d.details?.category || '—'}</dd>
+              <dd className="mono">{data.details?.category || '—'}</dd>
             </div>
             <div>
               <dt>Code set</dt>
@@ -95,7 +112,7 @@ export default function CodePage() {
             </button>
             <a
               className="btn btn-ghost"
-              href={`https://www.icd10data.com/ICD10CM/Codes/${d.code}`}
+              href={`https://www.icd10data.com/ICD10CM/Codes/${data.code}`}
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -109,14 +126,14 @@ export default function CodePage() {
         </section>
 
         <aside className="code-side">
-          {d.context && (
+          {data.context && (
             <div className="context-panel">
               <div className="context-panel-head">
                 <span className="context-panel-label">Purpose</span>
-                <span className="context-panel-title">{d.context.label}</span>
+                <span className="context-panel-title">{data.context.label}</span>
               </div>
-              <p className="context-panel-note">{d.context.note}</p>
-              {d.context.tip && <p className="context-panel-tip">{d.context.tip}</p>}
+              <p className="context-panel-note">{data.context.note}</p>
+              {data.context.tip && <p className="context-panel-tip">{data.context.tip}</p>}
               <div className="context-panel-switch">
                 <ContextSelector variant="compact" />
               </div>
