@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import axios from 'axios';
+import { searchCodes } from '../api/icdApi';
 import './SearchBar.css';
 
 function SearchBar({ context, onResults, onError, onLoading }) {
@@ -13,12 +13,10 @@ function SearchBar({ context, onResults, onError, onLoading }) {
     onLoading(true);
     onError(null);
     try {
-      const res = await axios.get('/api/icd/search', {
-        params: { q: query.trim(), version, context, limit: 25 }
-      });
-      onResults(res.data);
+      const data = await searchCodes(query.trim(), { version, context, limit: 25 });
+      onResults(data);
     } catch (err) {
-      onError(err.response?.data?.error || 'Search failed. Is the backend running on port 5000?');
+      onError(err.message || 'Search failed. Please try again.');
     } finally {
       onLoading(false);
     }
@@ -37,7 +35,7 @@ function SearchBar({ context, onResults, onError, onLoading }) {
           onChange={e => setQuery(e.target.value)}
         />
         {query && (
-          <button type="button" className="clear-btn" onClick={() => { setQuery(''); onResults([]); }}>x</button>
+          <button type="button" className="clear-btn" onClick={() => { setQuery(''); onResults([]); }}>✕</button>
         )}
       </div>
       <div className="search-controls">
