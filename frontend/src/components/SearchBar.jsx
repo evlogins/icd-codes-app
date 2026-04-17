@@ -1,52 +1,57 @@
-import React, { useState, useRef } from 'react';
-import { searchCodes } from '../api/icdApi';
+import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './SearchBar.css';
 
-function SearchBar({ context, onResults, onError, onLoading }) {
-  const [query, setQuery] = useState('');
-  const [version, setVersion] = useState('10');
+export default function SearchBar({ autoFocus = false, initialQuery = '', size = 'default' }) {
+  const [query, setQuery] = useState(initialQuery);
+  const navigate = useNavigate();
   const inputRef = useRef(null);
 
-  const handleSearch = async (e) => {
+  useEffect(() => {
+    setQuery(initialQuery);
+  }, [initialQuery]);
+
+  useEffect(() => {
+    if (!autoFocus) return;
+    inputRef.current?.focus();
+  }, [autoFocus]);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key !== '/') return;
+      const tag = document.activeElement?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      e.preventDefault();
+      inputRef.current?.focus();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const handleSubmit = (e) => {
     e.preventDefault();
-    if (!query.trim() || query.trim().length < 2) return;
-    onLoading(true);
-    onError(null);
-    try {
-      const data = await searchCodes(query.trim(), { version, context, limit: 25 });
-      onResults(data);
-    } catch (err) {
-      onError(err.message || 'Search failed. Please try again.');
-    } finally {
-      onLoading(false);
-    }
+    const q = query.trim();
+    if (q.length < 2) return;
+    navigate(`/search?q=${encodeURIComponent(q)}`);
   };
 
   return (
-    <form className="search-bar" onSubmit={handleSearch}>
-      <div className="search-input-wrapper">
-        <span className="search-icon">🔍</span>
-        <input
-          ref={inputRef}
-          type="text"
-          className="search-input"
-          placeholder="Search by keyword (diabetes) or code (E11.9)..."
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-        />
-        {query && (
-          <button type="button" className="clear-btn" onClick={() => { setQuery(''); onResults([]); }}>✕</button>
-        )}
-      </div>
-      <div className="search-controls">
-        <select className="version-select" value={version} onChange={e => setVersion(e.target.value)}>
-          <option value="10">ICD-10-CM</option>
-          <option value="11">ICD-11 (soon)</option>
-        </select>
-        <button type="submit" className="search-btn" disabled={!query.trim()}>Search</button>
-      </div>
+    <form className={'search-bar' + (size === 'hero' ? ' search-bar--hero' : '')} onSubmit={handleSubmit} role="search">
+      <input
+        ref={inputRef}
+        type="search"
+        className="search-input"
+        placeholder="Search ICD-10-CM codes"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        aria-label="Search ICD-10-CM codes"
+        autoComplete="off"
+        spellCheck="false"
+      />
+      <kbd className="search-hint" aria-hidden="true">/</kbd>
+      <button type="submit" className="search-submit" disabled={query.trim().length < 2}>
+        Search
+      </button>
     </form>
   );
 }
-
-export default SearchBar;

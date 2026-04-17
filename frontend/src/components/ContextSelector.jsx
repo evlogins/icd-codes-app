@@ -1,32 +1,35 @@
-import React from 'react';
+import { useAppContext } from '../state/AppContext';
 import './ContextSelector.css';
 
 const CONTEXTS = [
-  { id: 'clinical',     label: 'Clinical',     icon: '🏨', desc: 'Patient care and EHR' },
-  { id: 'billing',      label: 'Billing',       icon: '💰', desc: 'Claims and reimbursement' },
-  { id: 'research',     label: 'Research',      icon: '🔬', desc: 'Studies and cohorts' },
-  { id: 'public_health',label: 'Public Health', icon: '📊', desc: 'Surveillance and stats' }
+  { id: 'clinical',     label: 'Clinical' },
+  { id: 'billing',      label: 'Billing' },
+  { id: 'research',     label: 'Research' },
+  { id: 'public_health', label: 'Public Health' }
 ];
 
-function ContextSelector({ context, onContextChange }) {
+export default function ContextSelector({ variant = 'default' }) {
+  const { context, setContext } = useAppContext();
   return (
-    <div className="context-selector">
-      <label className="context-label">Purpose / Context:</label>
-      <div className="context-buttons">
-        {CONTEXTS.map(ctx => (
-          <button
-            key={ctx.id}
-            className={"context-btn " + (context === ctx.id ? 'active' : '')}
-            onClick={() => onContextChange(ctx.id)}
-            title={ctx.desc}
-          >
-            <span className="ctx-icon">{ctx.icon}</span>
-            <span className="ctx-label">{ctx.label}</span>
-          </button>
-        ))}
+    <div className={'ctx ctx--' + variant} role="radiogroup" aria-label="Purpose">
+      <span className="ctx-label">Purpose</span>
+      <div className="ctx-pills">
+        {CONTEXTS.map((c) => {
+          const active = context === c.id;
+          return (
+            <button
+              key={c.id}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              className={'ctx-pill' + (active ? ' is-active' : '')}
+              onClick={() => setContext(c.id)}
+            >
+              {c.label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
 }
-
-export default ContextSelector;
