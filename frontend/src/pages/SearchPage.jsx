@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import SearchBar from '../components/SearchBar';
 import ResultsList from '../components/ResultsList';
 import ContextSelector from '../components/ContextSelector';
+import SEO from '../components/SEO';
 import { searchCodes } from '../api/icdApi';
 import { useAppContext } from '../state/AppContext';
 import './SearchPage.css';
@@ -27,8 +28,14 @@ export default function SearchPage() {
     return () => { cancelled = true; };
   }, [q, context]);
 
+  const title = q ? `Search results for "${q}"` : 'Search ICD-10-CM Codes';
+  const description = q
+    ? `ICD-10-CM codes matching "${q}". Diagnosis code lookups with descriptions and billability.`
+    : 'Search every ICD-10-CM diagnosis code by keyword or code number.';
+
   return (
     <div className="search-page container">
+      <SEO title={title} description={description} path="/search" noindex />
       <div className="search-page-top">
         <SearchBar initialQuery={q} />
         <ContextSelector variant="compact" />

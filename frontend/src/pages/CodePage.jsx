@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ContextSelector from '../components/ContextSelector';
+import SEO from '../components/SEO';
 import { getCodeDetail, CONTEXT_NOTES } from '../api/icdApi';
 import { getCodeFromDataset } from '../data/codes';
 import { useAppContext } from '../state/AppContext';
@@ -59,6 +60,12 @@ export default function CodePage() {
   if (runtimeState.error || !data) {
     return (
       <div className="code-page container">
+        <SEO
+          title={`Code ${code} not found`}
+          description={`ICD-10-CM code ${code} does not appear in the FY 2026 code set.`}
+          path={`/code/${code}`}
+          noindex
+        />
         <Link to="/" className="back-link">← Back to search</Link>
         <div className="code-not-found">
           <h1>Code not found</h1>
@@ -73,6 +80,13 @@ export default function CodePage() {
 
   return (
     <div className="code-page container">
+      <SEO
+        title={`ICD-10 ${data.code} — ${data.description}`}
+        description={`${data.code}: ${data.description}. ICD-10-CM diagnosis code, FY 2026. ${specific ? 'Billable.' : 'Unspecified — not billable as-is.'}`}
+        path={`/code/${data.code}`}
+        code={data.code}
+        codeDescription={data.description}
+      />
       <Link to="/" className="back-link">← Back to search</Link>
 
       <header className="code-head">
