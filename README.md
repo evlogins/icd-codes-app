@@ -1,106 +1,109 @@
 # ICD Code Explorer
 
-A simple, user-friendly web application for searching and understanding **ICD (International Classification of Diseases)** diagnosis and procedure codes, with context-aware explanations for different professional use cases.
+A static reference site for the US **ICD-10-CM** diagnosis code set. Search by keyword or code number, read descriptions, billability, and category detail, and link out to canonical sources. Every code has its own URL and its own prerendered HTML page for SEO.
 
-## Features
+Live: **https://icd-codes-git.pages.dev**
 
-- **Search** ICD-10-CM codes by keyword or code number (e.g. "diabetes" or "E11.9")
-- **Context-aware** explanations: Billing, Clinical, Research, and Public Health
-- **Contextual tips** for each use case (billing specificity rules, research notes, etc.)
-- **Copy codes** to clipboard with one click
-- **External links** to ICD-10 reference resources
-- **Cached results** for fast repeat lookups (1-hour server-side cache)
-- **Free API** — uses NLM Clinical Tables (no API key required)
-- **Docker support** for easy deployment
+## Stack
 
-## Quick Start
+- **Vite 5** + **React 18** (single-page app, hydrated)
+- **React Router v6** (real routes: `/`, `/search?q=`, `/code/:code`)
+- **vite-react-ssg** — renders every route to static HTML at build time
+- **Cloudflare Pages** — hosts the `frontend/build/` output; connected to GitHub for per-push builds
+- **NLM Clinical Tables API** — browser-side fetch for any code outside the bundled dataset
 
-### Prerequisites
-- Node.js 18+
-- npm
+No backend. No database. The code dataset is a committed JSON file; everything else is static.
 
-### Run Locally
-
-```bash
-# Clone the repo
-git clone https://github.com/evlogins/icd-codes-app.git
-cd icd-codes-app
-
-# Start the backend (Terminal 1)
-cd backend
-npm install
-npm run dev
-# API runs on http://localhost:5000
-
-# Start the frontend (Terminal 2)
-cd frontend
-npm install
-npm start
-# App opens at http://localhost:3000
-```
-
-### Run with Docker
-
-```bash
-docker-compose up --build
-# App available at http://localhost:3000
-```
-
-## Project Structure
+## Project layout
 
 ```
 icd-codes-app/
-├── backend/
-│   ├── src/
-│   │   ├── controllers/icdController.js   # Search & lookup logic + caching
-│   │   ├── routes/icd.js                  # API route definitions
-│   │   └── server.js                      # Express server
-│   ├── .env.example
-│   ├── Dockerfile
-│   └── package.json
-├── frontend/
-│   ├── public/index.html
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── Header.js/.css             # App header with nav links
-│   │   │   ├── ContextSelector.js/.css    # Purpose selector (billing/clinical/etc)
-│   │   │   ├── SearchBar.js/.css          # Search input with version picker
-│   │   │   ├── ResultsList.js/.css        # List of search results
-│   │   │   └── CodeDetail.js/.css         # Detailed code view with context panel
-│   │   ├── App.js / App.css               # Main app component
-│   │   ├── index.js / index.css           # React entry point + global styles
-│   └── package.json
-└── docker-compose.yml
+├── CLAUDE.md                       # Contributor guidelines
+├── README.md
+└── frontend/
+    ├── index.html                  # Vite entry (head/meta are per-page via SEO.jsx)
+    ├── package.json
+    ├── vite.config.js
+    ├── public/
+    │   ├── _redirects              # Cloudflare SPA fallback
+    │   └── robots.txt              # Points at /sitemap.xml
+    ├── scripts/
+    │   ├── fetch-icd-codes.mjs     # One-shot: pull the full code list from NLM
+    │   └── build-sitemap.mjs       # Post-build: write build/sitemap.xml
+    └── src/
+        ├── main.jsx                # ViteReactSSG entry
+        ├── Layout.jsx              # Header + <Outlet/> + Footer
+        ├── routes.jsx              # Data routes (+ getStaticPaths for /code/:code)
+        ├── App.css                 # Design tokens, base, dark mode
+        ├── api/icdApi.js           # NLM client (runtime fallback)
+        ├── data/
+        │   ├── icd10cm-codes.json  # Committed ICD-10-CM dataset
+        │   └── codes.js            # getCodeFromDataset() lookup
+        ├── state/AppContext.jsx    # Purpose (clinical/billing/research/public_health)
+        ├── components/
+        │   ├── Header.jsx          # Brand + nav
+        │   ├── Footer.jsx          # Attribution line
+        │   ├── SearchBar.jsx       # / keyboard shortcut, navigates to /search?q=
+        │   ├── ResultsList.jsx     # Row-per-result, <Link> to /code/:code
+        │   ├── ContextSelector.jsx # Purpose pill row
+        │   └── SEO.jsx             # <title>, meta, OG, Twitter, canonical, MedicalCode JSON-LD
+        └── pages/
+            ├── HomePage.jsx
+            ├── SearchPage.jsx
+            ├── CodePage.jsx
+            └── NotFoundPage.jsx
 ```
 
-## API Endpoints
+## Develop
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/icd/search?q=diabetes&context=billing` | Search codes by keyword |
-| GET | `/api/icd/:code?context=research` | Get details for a specific code |
-| GET | `/health` | Health check |
+```bash
+cd frontend
+npm install
+npm run dev      # CSR, localhost:3000
+```
 
-### Context Options
-- `clinical` — Patient care and EHR documentation
-- `billing` — Insurance claims and reimbursement
-- `research` — Scientific studies and cohort definitions
-- `public_health` — Disease surveillance and statistics
+Fast iteration runs in standard Vite dev (no SSR). The build verifies SSG.
 
-## Data Source
+## Build
 
-Uses the free **NLM Clinical Tables ICD-10-CM API** (no API key required):
-- https://clinicaltables.nlm.nih.gov/
+```bash
+npm run build    # vite-react-ssg build && node scripts/build-sitemap.mjs
+npm run preview  # serve the built build/ directory
+```
 
-## Roadmap
+Build output goes to `frontend/build/`. Cloudflare Pages is configured with root `frontend` and output directory `build`.
 
-- [ ] ICD-11 support via WHO API
-- [ ] ICD-10-PCS procedure codes
-- [ ] Export search results to CSV/JSON
-- [ ] Code hierarchy browser (parent/child relationships)
-- [ ] Billing crosswalk (ICD to CPT mapping)
-- [ ] Saved code lists / favorites
-- [ ] Dark mode
+Each code in `src/data/icd10cm-codes.json` becomes a prerendered HTML page (`build/code/E11.9.html` etc.) with real content in the body — no empty `<div id="root">`, no JS required for Google to read it. Every page ships with unique `<title>`, `<meta>`, Open Graph, Twitter Card, canonical URL, and — for code pages — schema.org `MedicalCode` JSON-LD.
+
+## Refresh the code dataset
+
+The sandbox can't reach NLM, so the full dataset refresh is a local task. Run from your machine when CMS publishes FY updates:
+
+```bash
+cd frontend
+npm run fetch-codes    # ~2–5 min, prefix-walks NLM Clinical Tables
+# writes src/data/icd10cm-codes.json
+git add src/data/icd10cm-codes.json
+git commit -m "data: refresh ICD-10-CM codes (FY xxxx)"
+git push
+```
+
+The next CI build will prerender every new code and regenerate the sitemap (sitemap auto-splits into an index + chunks once past 50,000 URLs).
+
+## Environment
+
+- `VITE_SITE_URL` (optional) — base URL used in canonical/OG tags and sitemap entries. Defaults to `https://icd-codes-git.pages.dev`.
+
+## Contributor guidelines
+
+See `CLAUDE.md` for the four principles we work by — think before coding, simplicity first, surgical changes, goal-driven execution.
+
+## Data source
+
+- **NLM Clinical Tables ICD-10-CM API** — https://clinicaltables.nlm.nih.gov/
+- **CMS** — https://www.cms.gov/Medicare/Coding/ICD10 (canonical FY descriptor files)
+
+Informational use only. Not medical advice.
 
 ## License
 
